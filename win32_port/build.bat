@@ -7,7 +7,7 @@ set compiler_flags=
 
 rem ROM configration
 set baserom=pal-1.0
-set compiler_flags=-DOOT_DEBUG=0 -DOOT_VERSION=PAL_1_0 -DPLATFORM_GC=0 -DPLATFORM_N64=1 %compiler_flags%
+set compiler_flags=-DOOT_VERSION=PAL_1_0 -DPLATFORM_GC=0 -DPLATFORM_N64=1 %compiler_flags%
 
 rem General compiler flags
 set compiler_flags=-std:c11 -nologo %compiler_flags%
@@ -15,6 +15,10 @@ set compiler_flags=-D_LANGUAGE_C -DF3DEX_GBI_2 -D_SIZE_T %compiler_flags%
 
 rem Debug compiler flags
 set compiler_flags=-Od -Zi -MT %compiler_flags%
+
+rem Release compiler flags
+rem set compiler_flags=-DOOT_DEBUG=1 %compiler_flags%
+set compiler_flags=-DOOT_DEBUG=0 %compiler_flags%
 
 rem Include directives
 set compiler_flags=-I ../../ -I ../../src -I ../../include -I ../../include/libc %compiler_flags%

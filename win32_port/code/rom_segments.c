@@ -1,4 +1,4 @@
-#include "ultra64/ultratypes.h"
+#include "global.h"
 
 // #include "z64dma.h"
 // #include "attributes.h"
@@ -8,7 +8,9 @@
 // DMA data
 #define DEFINE_DMA_ENTRY(name, _1)        \
     u8 _##name##SegmentRomStart[] = { 0 }; \
-    u8 _##name##SegmentRomEnd[] = { 0 };
+    u8 _##name##SegmentRomEnd[] = { 0 }; \
+    u8 _##name##SegmentStart[] = { 0 }; \
+    u8 _##name##SegmentEnd[] = { 0 };
 
 #include "tables/dmadata_table.h"
 
@@ -24,6 +26,28 @@
 
 #undef DEFINE_SEQUENCE
 #undef DEFINE_SEQUENCE_PTR
+
+
+// Soundfont
+#define DEFINE_SOUNDFONT(name, medium, cachePolicy, sampleBankNormal, sampleBankDD, nInstruments, nDrums, nSfx) \
+    u8 name##_Start[] = { 0 };                                                                                   \
+    u8 name##_Size[] = { 0 };
+
+#include "assets/audio/soundfont_table.h"
+
+#undef DEFINE_SOUNDFONT
+
+// Samplebank
+#define DEFINE_SAMPLE_BANK(name, medium, cachePolicy) \
+    u8 name##_Start[] = { 0 };                         \
+    u8 name##_Size[] = { 0 };
+#define DEFINE_SAMPLE_BANK_PTR(index, medium, cachePolicy) /*empty*/
+
+#include "assets/audio/samplebank_table.h"
+
+#undef DEFINE_SAMPLE_BANK
+#undef DEFINE_SAMPLE_BANK_PTR
+
 
 
 #if 0

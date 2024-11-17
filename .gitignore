@@ -31,3 +31,7 @@ graphs/
 # - use `git config core.excludesFile path/to/my_gitignore_file`
 # - or edit `.git/info/exclude`
 win32_port/spec
+win32_port/oot_debug.rdbg
+win32_port/oot.exe
+win32_port/oot.ilk
+win32_port/oot.pdb

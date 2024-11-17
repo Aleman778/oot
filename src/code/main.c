@@ -26,7 +26,7 @@ extern struct IrqMgr gIrqMgr;
 #pragma increment_block_number "gc-eu:160 gc-eu-mq:160 gc-jp:160 gc-jp-ce:160 gc-jp-mq:160 gc-us:160 gc-us-mq:160" \
                                "ntsc-1.0:151 ntsc-1.1:151 ntsc-1.2:151 pal-1.0:149 pal-1.1:149"
 
-extern u8 _buffersSegmentEnd[];
+extern u8* _buffersSegmentEnd;
 
 s32 gScreenWidth = SCREEN_WIDTH;
 s32 gScreenHeight = SCREEN_HEIGHT;
@@ -67,7 +67,9 @@ void Main_LogSystemHeap(void) {
 }
 #endif
 
-void Main(void* arg) {
+void Main(void* arg, void* heap_memory) {
+    _buffersSegmentEnd = (u8*) heap_memory;
+
     IrqMgrClient irqClient;
     OSMesgQueue irqMgrMsgQueue;
     OSMesg irqMgrMsgBuf[60];
@@ -83,16 +85,16 @@ void Main(void* arg) {
 #if PLATFORM_N64
     func_800AD410();
     if (D_80121211 != 0) {
-        systemHeapStart = (uintptr_t)_n64ddSegmentEnd;
+        systemHeapStart = (uintptr_t) heap_memory;
         SysCfb_Init(1);
     } else {
         func_800AD488();
-        systemHeapStart = (uintptr_t)_buffersSegmentEnd;
+        systemHeapStart = (uintptr_t) heap_memory;
         SysCfb_Init(0);
     }
 #else
     SysCfb_Init(0);
-    systemHeapStart = (uintptr_t)_buffersSegmentEnd;
+    systemHeapStart = (uintptr_t) heap_memory;
 #endif
     fb = (uintptr_t)SysCfb_GetFbPtr(0);
     gSystemHeapSize = fb - systemHeapStart;
@@ -153,8 +155,10 @@ void Main(void* arg) {
     AudioMgr_WaitForInit(&sAudioMgr);
 
     StackCheck_Init(&sGraphStackInfo, sGraphStack, STACK_TOP(sGraphStack), 0, 0x100, "graph");
-    osCreateThread(&sGraphThread, THREAD_ID_GRAPH, Graph_ThreadEntry, arg, STACK_TOP(sGraphStack), THREAD_PRI_GRAPH);
-    osStartThread(&sGraphThread);
+    // osCreateThread(&sGraphThread, THREAD_ID_GRAPH, Graph_ThreadEntry, arg, STACK_TOP(sGraphStack), THREAD_PRI_GRAPH);
+    // osStartThread(&sGraphThread);
+    // TODO: do we need threading?
+    Graph_ThreadEntry(arg);
 
 #if OOT_VERSION >= PAL_1_0
     osSetThreadPri(NULL, THREAD_PRI_MAIN);

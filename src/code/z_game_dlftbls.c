@@ -16,20 +16,20 @@
         0,    sizeof(typeName##State),                                                                    \
     },
 
-#define DEFINE_GAMESTATE(typeName, enumName, name) \
-    {                                              \
-        NULL,                                      \
-        ROM_FILE(ovl_##name),                      \
-        _ovl_##name##SegmentStart,                 \
-        _ovl_##name##SegmentEnd,                   \
-        NULL,                                      \
-        typeName##_Init,                           \
-        typeName##_Destroy,                        \
-        NULL,                                      \
-        NULL,                                      \
-        0,                                         \
-        sizeof(typeName##State),                   \
-    },
+#define DEFINE_GAMESTATE(typeName, enumName, name) DEFINE_GAMESTATE_INTERNAL(typeName, enumName)
+    // {                                              \
+    //     NULL,                                      \
+    //     ROM_FILE(ovl_##name),                      \
+    //     _ovl_##name##SegmentStart,                 \
+    //     _ovl_##name##SegmentEnd,                   \
+    //     NULL,                                      \
+    //     typeName##_Init,                           \
+    //     typeName##_Destroy,                        \
+    //     NULL,                                      \
+    //     NULL,                                      \
+    //     0,                                         \
+    //     sizeof(typeName##State),                   \
+    // },
 
 GameStateOverlay gGameStateOverlayTable[] = {
 #include "tables/gamestate_table.h"

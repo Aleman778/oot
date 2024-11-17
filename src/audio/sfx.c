@@ -311,7 +311,7 @@ void Audio_ChooseActiveSfx(u8 bankId) {
     }
     entryIndex = gSfxBanks[bankId][0].next;
     k = 0;
-    while (entryIndex != 0xFF) {
+    while (false && entryIndex != 0xFF) { // TODO: implement sound!
         if ((gSfxBanks[bankId][entryIndex].state == SFX_STATE_QUEUED) &&
             (gSfxBanks[bankId][entryIndex].sfxId & 0xC00)) {
             gSfxBanks[bankId][entryIndex].freshness--;
@@ -514,23 +514,25 @@ void Audio_PlayActiveSfx(u8 bankId) {
 }
 
 void Audio_StopSfxByBank(u8 bankId) {
-    SfxBankEntry* entry;
-    s32 pad;
-    SfxBankEntry cmp;
-    u8 entryIndex = gSfxBanks[bankId][0].next;
+    return 0;
+    // TODO: implement me
+    // SfxBankEntry* entry;
+    // s32 pad;
+    // SfxBankEntry cmp;
+    // u8 entryIndex = gSfxBanks[bankId][0].next;
 
-    while (entryIndex != 0xFF) {
-        entry = &gSfxBanks[bankId][entryIndex];
-        if (entry->state >= SFX_STATE_PLAYING_REFRESH) {
-            AUDIOCMD_CHANNEL_SET_IO(SEQ_PLAYER_SFX, entry->channelIndex, 0, 0);
-        }
-        if (entry->state != SFX_STATE_EMPTY) {
-            Audio_RemoveSfxBankEntry(bankId, entryIndex);
-        }
-        entryIndex = gSfxBanks[bankId][0].next;
-    }
-    cmp.sfxId = bankId << 12;
-    Audio_RemoveMatchingSfxRequests(0, &cmp);
+    // while (entryIndex != 0xFF) {
+    //     entry = &gSfxBanks[bankId][entryIndex];
+    //     if (entry->state >= SFX_STATE_PLAYING_REFRESH) {
+    //         AUDIOCMD_CHANNEL_SET_IO(SEQ_PLAYER_SFX, entry->channelIndex, 0, 0);
+    //     }
+    //     if (entry->state != SFX_STATE_EMPTY) {
+    //         Audio_RemoveSfxBankEntry(bankId, entryIndex);
+    //     }
+    //     entryIndex = gSfxBanks[bankId][0].next;
+    // }
+    // cmp.sfxId = bankId << 12;
+    // Audio_RemoveMatchingSfxRequests(0, &cmp);
 }
 
 void Audio_RemoveSfxFromBankByPos(u8 bankId, Vec3f* pos) {

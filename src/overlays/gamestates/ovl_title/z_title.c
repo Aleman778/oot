@@ -150,11 +150,20 @@ void ConsoleLogo_Main(GameState* thisx) {
 
     OPEN_DISPS(this->state.gfxCtx, "../z_title.c", 494);
 
+
     gSPSegment(POLY_OPA_DISP++, 0, NULL);
     gSPSegment(POLY_OPA_DISP++, 1, this->staticSegment);
     Gfx_SetupFrame(this->state.gfxCtx, 0, 0, 0);
     ConsoleLogo_Calc(this);
+    
+    Gfx* start = __gfxCtx->polyOpa.p;
     ConsoleLogo_Draw(this);
+
+    int i = 0;
+    while (i < this->state.gfxCtx->polyOpa.p - start) {
+        osSyncPrintf("gfx%d = %llx\n", i++, start[i].force_structure_alignment);
+    }
+    assert(0);
 
 #if OOT_DEBUG
     if (gIsCtrlr2Valid) {

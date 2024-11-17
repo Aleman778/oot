@@ -27,7 +27,7 @@ ActorProfile En_Jsjutan_Profile = {
 };
 
 // Shadow texture. 32x64 I8.
-static u8 sShadowTex[0x800];
+u8 sShadowTex[0x800];
 
 static Vec3s D_80A8EE10[0x90];
 
