@@ -35,3 +35,4 @@ win32_port/oot_debug.rdbg
 win32_port/oot.exe
 win32_port/oot.ilk
 win32_port/oot.pdb
+*.vcxproj

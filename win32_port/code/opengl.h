@@ -1,5 +1,7 @@
 #include "ultra64/ultratypes.h"
 #include "stdbool.h"
+#include "batch.h"
+
 
 // OpenGL constants
 #define GL_DEPTH_BUFFER_BIT               0x00000100
@@ -319,15 +321,7 @@ typedef struct OpenGL_Context {
     OPENGL_FUNC(glDebugMessageControl);
 } OpenGL_Context;
 
-static OpenGL_Context opengl;
-
-typedef struct Vertex {
-    f32 x, y, z;
-} Vertex;
-
-typedef struct Batch {
-    int unused;
-} Batch;
+extern OpenGL_Context opengl;
 
 typedef struct Texture {
     int handle;
@@ -350,6 +344,8 @@ typedef struct Texture_Params {
 
 void init_opengl();
 
-void opengl_submit_batch(Batch* batch);
+// void opengl_submit_batch(Batch* batch);
 
-inline void opengl_clear_render_target(f32 red, f32 green, f32 blue, f32 alpha);
+void opengl_clear_render_target(f32 red, f32 green, f32 blue, f32 alpha);
+
+void opengl_init_texture(Texture* texture, u8* image_data, GLenum internal_format, GLenum format, Texture_Params params);

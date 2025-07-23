@@ -159,12 +159,6 @@ void ConsoleLogo_Main(GameState* thisx) {
     Gfx* start = __gfxCtx->polyOpa.p;
     ConsoleLogo_Draw(this);
 
-    int i = 0;
-    while (i < this->state.gfxCtx->polyOpa.p - start) {
-        osSyncPrintf("gfx%d = %llx\n", i++, start[i].force_structure_alignment);
-    }
-    assert(0);
-
 #if OOT_DEBUG
     if (gIsCtrlr2Valid) {
         Gfx* gfx = POLY_OPA_DISP;

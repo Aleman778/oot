@@ -67,6 +67,96 @@ void Main_LogSystemHeap(void) {
 }
 #endif
 
+void MainTest(void* arg, void* heap_memory) {
+    _buffersSegmentEnd = (u8*) heap_memory;
+
+    IrqMgrClient irqClient;
+    OSMesgQueue irqMgrMsgQueue;
+    OSMesg irqMgrMsgBuf[60];
+    uintptr_t systemHeapStart;
+    uintptr_t fb;
+
+    PRINTF(T("mainproc 実行開始\n", "mainproc Start running\n"));
+    gScreenWidth = SCREEN_WIDTH;
+    gScreenHeight = SCREEN_HEIGHT;
+    gAppNmiBufferPtr = (PreNmiBuff*)osAppNMIBuffer;
+    PreNmiBuff_Init(gAppNmiBufferPtr);
+    Fault_Init();
+#if PLATFORM_N64
+    func_800AD410();
+    if (D_80121211 != 0) {
+        systemHeapStart = (uintptr_t) heap_memory;
+        SysCfb_Init(1);
+    } else {
+        func_800AD488();
+        systemHeapStart = (uintptr_t) heap_memory;
+        SysCfb_Init(0);
+    }
+#else
+    SysCfb_Init(0);
+    systemHeapStart = (uintptr_t) heap_memory;
+#endif
+    fb = (uintptr_t)SysCfb_GetFbPtr(0);
+    gSystemHeapSize = fb - systemHeapStart;
+    PRINTF(T("システムヒープ初期化 %08x-%08x %08x\n", "System heap initialization %08x-%08x %08x\n"), systemHeapStart,
+           fb, gSystemHeapSize);
+    SystemHeap_Init((void*)systemHeapStart, gSystemHeapSize); // initializes the system heap
+
+#if OOT_DEBUG
+    {
+        void* debugHeapStart;
+        u32 debugHeapSize;
+
+        if (osMemSize >= 0x800000) {
+            debugHeapStart = SysCfb_GetFbEnd();
+            debugHeapSize = PHYS_TO_K0(0x600000) - (uintptr_t)debugHeapStart;
+        } else {
+            debugHeapSize = 0x400;
+            debugHeapStart = SYSTEM_ARENA_MALLOC(debugHeapSize, "../main.c", 565);
+        }
+
+        PRINTF("debug_InitArena(%08x, %08x)\n", debugHeapStart, debugHeapSize);
+        DebugArena_Init(debugHeapStart, debugHeapSize);
+    }
+#endif
+
+    Regs_Init();
+
+    R_ENABLE_ARENA_DBG = 0;
+
+    osCreateMesgQueue(&sSerialEventQueue, sSerialMsgBuf, ARRAY_COUNT(sSerialMsgBuf));
+    osSetEventMesg(OS_EVENT_SI, &sSerialEventQueue, NULL);
+
+#if OOT_DEBUG
+    Main_LogSystemHeap();
+#endif
+
+    osCreateMesgQueue(&irqMgrMsgQueue, irqMgrMsgBuf, ARRAY_COUNT(irqMgrMsgBuf));
+    StackCheck_Init(&sIrqMgrStackInfo, sIrqMgrStack, STACK_TOP(sIrqMgrStack), 0, 0x100, "irqmgr");
+    IrqMgr_Init(&gIrqMgr, STACK_TOP(sIrqMgrStack), THREAD_PRI_IRQMGR, 1);
+
+    PRINTF(T("タスクスケジューラの初期化\n", "Initialize the task scheduler\n"));
+    StackCheck_Init(&sSchedStackInfo, sSchedStack, STACK_TOP(sSchedStack), 0, 0x100, "sched");
+    Sched_Init(&gScheduler, STACK_TOP(sSchedStack), THREAD_PRI_SCHED, gViConfigModeType, 1, &gIrqMgr);
+
+#if PLATFORM_N64
+    CIC6105_AddFaultClient();
+    func_80001640();
+#endif
+
+    IrqMgr_AddClient(&gIrqMgr, &irqClient, &irqMgrMsgQueue);
+
+    StackCheck_Init(&sAudioStackInfo, sAudioStack, STACK_TOP(sAudioStack), 0, 0x100, "audio");
+    AudioMgr_Init(&sAudioMgr, STACK_TOP(sAudioStack), THREAD_PRI_AUDIOMGR, THREAD_ID_AUDIOMGR, &gScheduler, &gIrqMgr);
+
+    StackCheck_Init(&sPadMgrStackInfo, sPadMgrStack, STACK_TOP(sPadMgrStack), 0, 0x100, "padmgr");
+    PadMgr_Init(&gPadMgr, &sSerialEventQueue, &gIrqMgr, THREAD_ID_PADMGR, THREAD_PRI_PADMGR, STACK_TOP(sPadMgrStack));
+
+    AudioMgr_WaitForInit(&sAudioMgr);
+
+    StackCheck_Init(&sGraphStackInfo, sGraphStack, STACK_TOP(sGraphStack), 0, 0x100, "graph");
+}
+
 void Main(void* arg, void* heap_memory) {
     _buffersSegmentEnd = (u8*) heap_memory;
 

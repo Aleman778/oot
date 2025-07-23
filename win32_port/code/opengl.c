@@ -1,5 +1,8 @@
 #include "opengl.h"
 #include "assert.h"
+#include "batch.h"
+
+OpenGL_Context opengl;
 
 #define pln(fmt, ...)
 
@@ -16,6 +19,7 @@ opengl_debug_callback(GLenum source,
         //assert(0);
     }
 }
+
 
 void
 opengl_init_texture(Texture* texture, u8* image_data, GLenum internal_format, GLenum format, Texture_Params params) {
@@ -140,14 +144,14 @@ check_program(GLuint program, const GLchar* name) {
 static const GLchar* default_vertex_source_glsl =
 ""
 glsl_shader_header
-"layout (location = 0) in vec2 in_position;\n"
+"layout (location = 0) in vec3 in_position;\n"
 "layout (location = 1) in vec2 in_texcoord;\n"
 "layout (location = 2) in vec4 in_color;\n"
 "uniform mat4 u_mvp;\n"
 "out vec2 v_texcoord;\n"
 "out vec4 v_color;\n"
 "void main() {\n"
-"  gl_Position = u_mvp * vec4(in_position, 0.0f, 1.0f);\n"
+"  gl_Position = u_mvp * vec4(in_position, 1.0f);\n"
 "  v_texcoord = in_texcoord;\n"
 "  v_color = in_color;\n"
 "}\n";
@@ -220,15 +224,19 @@ init_opengl() {
     opengl.glGenBuffers(1, &opengl.vertex_buffer);
     opengl.glBindBuffer(GL_ARRAY_BUFFER, opengl.vertex_buffer);
     opengl.glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*1000, 0, GL_DYNAMIC_DRAW);
-    
+
+
+    // Pos
     opengl.glEnableVertexAttribArray(0);
-    opengl.glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
+    opengl.glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
     
+    // UV
     opengl.glEnableVertexAttribArray(1);
-    opengl.glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) (2 * sizeof(f32)));
+    opengl.glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) (3 * sizeof(f32)));
     
+    // Color
     opengl.glEnableVertexAttribArray(2);
-    opengl.glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) (4 * sizeof(f32)));
+    opengl.glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) (5 * sizeof(f32)));
     
     opengl.glGenBuffers(1, &opengl.index_buffer);
     opengl.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, opengl.index_buffer);
@@ -276,55 +284,55 @@ opengl_end_drawing(OpenGL_Context* opengl) {
 }
 #endif
 
-void
-opengl_submit_batch(Batch* batch) {
-    // f32 render_height = get_render_size().height;
-    // opengl.glScissor((int) batch->clip_rectangle.x, (int) (render_height - (batch->clip_rectangle.y + batch->clip_rectangle.height)),
-    //                  (int) batch->clip_rectangle.width, (int) batch->clip_rectangle.height);
+// void
+// opengl_submit_batch(Batch* batch) {
+//     // f32 render_height = get_render_size().height;
+//     // opengl.glScissor((int) batch->clip_rectangle.x, (int) (render_height - (batch->clip_rectangle.y + batch->clip_rectangle.height)),
+//     //                  (int) batch->clip_rectangle.width, (int) batch->clip_rectangle.height);
     
-    // if (batch->vertex_count > 0) {
-    //     opengl.glBindBuffer(GL_ARRAY_BUFFER, opengl.vertex_buffer);
-    //     opengl.glBufferSubData(GL_ARRAY_BUFFER, 0, batch->vertex_count*sizeof(Vertex), batch->vertices);
-    // }
+//     // if (batch->vertex_count > 0) {
+//     //     opengl.glBindBuffer(GL_ARRAY_BUFFER, opengl.vertex_buffer);
+//     //     opengl.glBufferSubData(GL_ARRAY_BUFFER, 0, batch->vertex_count*sizeof(Vertex), batch->vertices);
+//     // }
     
-    // if (batch->index_count > 0) {
-    //     opengl.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, opengl.index_buffer);
-    //     opengl.glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, batch->index_count*sizeof(u16), batch->indices);
-    // }
+//     // if (batch->index_count > 0) {
+//     //     opengl.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, opengl.index_buffer);
+//     //     opengl.glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, batch->index_count*sizeof(u16), batch->indices);
+//     // }
     
-    // opengl.glUseProgram(batch->shader.handle ? batch->shader.handle : opengl.default_shader.handle);
-    // opengl.glUniformMatrix4fv(batch->shader.uniforms[SHADER_UNIFORM_MVP], 1, GL_TRUE, batch->view_projection_matrix.data);
+//     // opengl.glUseProgram(batch->shader.handle ? batch->shader.handle : opengl.default_shader.handle);
+//     // opengl.glUniformMatrix4fv(batch->shader.uniforms[SHADER_UNIFORM_MVP], 1, GL_TRUE, batch->view_projection_matrix.data);
     
-    // // Setup textures
-    // int samplers[] = { 0 };
-    // opengl.glActiveTexture(GL_TEXTURE0);
-    // opengl.glBindTexture(GL_TEXTURE_2D, batch->texture0 ? batch->texture0 : opengl.default_texture);
-    // opengl.glUniform1iv(batch->shader.uniforms[SHADER_UNIFORM_TEXTURE0], 1, samplers);
-    // TODO(Alexander): add support for multiple simultaneus textures
-#if 0
-    // Bind textures to slots
-    int texture_slots[32];
-    opengl.glActiveTexture(GL_TEXTURE0);
-    opengl.glBindTexture(GL_TEXTURE_2D, opengl.default_texture);
-    texture_slots[0] = 0;
-    for (int texture_index = 1; texture_index < batch->texture_count; texture_index++) {
-        opengl.glActiveTexture(GL_TEXTURE0 + texture_index);
-        opengl.glBindTexture(GL_TEXTURE_2D, (GLuint) batch->textures[texture_index]);
-        texture_slots[texture_index] = texture_index;
-    }
-    opengl.glUniform1iv(batch->shader.uniforms[1], batch->texture_count > 0 ? batch->texture_count : 1, texture_slots); 
-#endif
+//     // // Setup textures
+//     // int samplers[] = { 0 };
+//     // opengl.glActiveTexture(GL_TEXTURE0);
+//     // opengl.glBindTexture(GL_TEXTURE_2D, batch->texture0 ? batch->texture0 : opengl.default_texture);
+//     // opengl.glUniform1iv(batch->shader.uniforms[SHADER_UNIFORM_TEXTURE0], 1, samplers);
+//     // TODO(Alexander): add support for multiple simultaneus textures
+// #if 0
+//     // Bind textures to slots
+//     int texture_slots[32];
+//     opengl.glActiveTexture(GL_TEXTURE0);
+//     opengl.glBindTexture(GL_TEXTURE_2D, opengl.default_texture);
+//     texture_slots[0] = 0;
+//     for (int texture_index = 1; texture_index < batch->texture_count; texture_index++) {
+//         opengl.glActiveTexture(GL_TEXTURE0 + texture_index);
+//         opengl.glBindTexture(GL_TEXTURE_2D, (GLuint) batch->textures[texture_index]);
+//         texture_slots[texture_index] = texture_index;
+//     }
+//     opengl.glUniform1iv(batch->shader.uniforms[1], batch->texture_count > 0 ? batch->texture_count : 1, texture_slots); 
+// #endif
     
     
-    // if (batch->mode == DRAW_TRIANGLES && batch->index_count > 0) {
-    //     opengl.glDrawElements(GL_TRIANGLES, batch->index_count, GL_UNSIGNED_SHORT, 0);
+//     // if (batch->mode == DRAW_TRIANGLES && batch->index_count > 0) {
+//     //     opengl.glDrawElements(GL_TRIANGLES, batch->index_count, GL_UNSIGNED_SHORT, 0);
         
-    // } else if (batch->mode == DRAW_LINES && batch->vertex_count > 0) {
-    //     opengl.glDrawArrays(GL_LINES, 0, batch->vertex_count);
-    // }
-}
+//     // } else if (batch->mode == DRAW_LINES && batch->vertex_count > 0) {
+//     //     opengl.glDrawArrays(GL_LINES, 0, batch->vertex_count);
+//     // }
+// }
 
-inline void
+void
 opengl_clear_render_target(f32 red, f32 green, f32 blue, f32 alpha) {
     opengl.glDisable(GL_SCISSOR_TEST);
     opengl.glClearColor(red, green, blue, alpha);

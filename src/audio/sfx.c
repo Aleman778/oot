@@ -311,7 +311,7 @@ void Audio_ChooseActiveSfx(u8 bankId) {
     }
     entryIndex = gSfxBanks[bankId][0].next;
     k = 0;
-    while (false && entryIndex != 0xFF) { // TODO: implement sound!
+    while (false && entryIndex != 0xFF) { // TODO: implement sound! 
         if ((gSfxBanks[bankId][entryIndex].state == SFX_STATE_QUEUED) &&
             (gSfxBanks[bankId][entryIndex].sfxId & 0xC00)) {
             gSfxBanks[bankId][entryIndex].freshness--;

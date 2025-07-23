@@ -1,13 +1,20 @@
+#define STDINT_H
+
 #include "windows.h"
 #include "xinput.h"
-#include "opengl.h"
 #include "assert.h"
 
 #undef NULL
 #include "ultra64/ultratypes.h"
 #include "libc/stdbool.h"
 
+#include "opengl.h"
+
 #define pln(fmt, ...)
+
+// TODO: debug code
+void MainTest(void* arg, void* heap_memory);
+void render_test(int w, int h);
 
 const char*
 cstring_print(const char* format, ...) {
@@ -74,6 +81,23 @@ win32_fatal_error(const char* message) {
 void
 win32_warning(const char* message) {
     MessageBoxA(global_window, message, "Note", MB_OK);
+}
+
+void
+win32_process_pending_messages() {
+    MSG message;
+    while (PeekMessageA(&message, 0, 0, 0, PM_REMOVE)) {
+        switch (message.message) {
+            case WM_QUIT: {
+                global_is_running = false;
+            } break;
+            
+            default: {
+                TranslateMessage(&message);
+                DispatchMessageA(&message);
+            } break;
+        }
+    }    
 }
 
 #if 0
@@ -464,6 +488,9 @@ int start_main_loop();
 
 void
 main() {
+    // Enable UTF-8 encoding
+    SetConsoleOutputCP(65001);
+
     HINSTANCE h_instance = GetModuleHandleA(0);
     
     sleep_is_granular = timeBeginPeriod(1) == TIMERR_NOERROR;
@@ -523,6 +550,8 @@ main() {
         global_window = window;
         global_device_context = device_context;
 
+        init_opengl();
+
         start_main_loop();
         
     } else {
@@ -555,8 +584,15 @@ start_main_loop() {
     
     s64 counter_freq = win32_get_high_resolution_frequency();
     s64 last_counter = win32_get_high_resolution_time();
+
+    // TODO: hardcoded size
+    
+    void* heap_memory = VirtualAlloc(0, 0x400000, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+    MainTest(0, heap_memory);
+
     while (global_is_running) {
         // Input
+        win32_process_pending_messages();
         // win32_process_pending_messages(&acorn.input);
         
         RECT rect;
@@ -592,34 +628,40 @@ start_main_loop() {
         // set_blend_mode(BLEND_MODE_ALPHA);
         // callback(data);
         // flush_batch(acorn.curr_batch);
+
+
+        
+        render_test(rect.right, rect.bottom);
         
         win32_swap_buffers(global_device_context);
+
+        Sleep(20);
         
         // Check time and limit framerate
-        s64 end_counter = win32_get_high_resolution_time();
-        f64 seconds_elapsed_for_frame = (f64) (end_counter - last_counter) / (f64) counter_freq;
-        if (seconds_elapsed_for_frame < target_seconds_per_frame) {
-            if (sleep_is_granular) {
-                DWORD sleep_ms = (DWORD) (1000.0 * (target_seconds_per_frame -
-                                                    seconds_elapsed_for_frame));
-                if (sleep_ms > 0) {
-                    Sleep(sleep_ms);
-                }
-            } else {
-                // TODO(Alexander): implement other way without sleep
-                assert(0 && "unimplemented");
-            }
-        } else {
-            // TODO(alexander): missed frame rate, logging!
-        }
+        // s64 end_counter = win32_get_high_resolution_time();
+        // f64 seconds_elapsed_for_frame = (f64) (end_counter - last_counter) / (f64) counter_freq;
+        // if (seconds_elapsed_for_frame < target_seconds_per_frame) {
+        //     if (sleep_is_granular) {
+        //         DWORD sleep_ms = (DWORD) (1000.0 * (target_seconds_per_frame -
+        //                                             seconds_elapsed_for_frame));
+        //         if (sleep_ms > 0) {
+        //             Sleep(sleep_ms);
+        //         }
+        //     } else {
+        //         // TODO(Alexander): implement other way without sleep
+        //         assert(0 && "unimplemented");
+        //     }
+        // } else {
+        //     // TODO(alexander): missed frame rate, logging!
+        // }
         
         //pln("frametime: %f ms", seconds_elapsed_for_frame*1000.0);
         
         // Delta time
-        end_counter = win32_get_high_resolution_time();
-        global_delta_time = (f32) (end_counter - last_counter) / (f32) counter_freq;
+        // end_counter = win32_get_high_resolution_time();
+        // global_delta_time = (f32) (end_counter - last_counter) / (f32) counter_freq;
         //pln("delta_time: %f ms", delta_time*1000.0);
-        last_counter = end_counter;
+        // last_counter = end_counter;
     }
     
     return 0;

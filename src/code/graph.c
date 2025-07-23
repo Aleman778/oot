@@ -467,15 +467,66 @@ void Graph_Update(GraphicsContext* gfxCtx, GameState* gameState) {
 #endif
 }
 
+GameStateOverlay* Graph_UpdateEntry(GameStateOverlay* nextOvl, GraphicsContext* gfxCtx) {
+    if (nextOvl == NULL) {
+        return nextOvl;
+    }
+
+    static GameState* gameState;
+    static u32 size;
+    static GameStateOverlay* ovl;
+
+    if (ovl != nextOvl) {
+        ovl = nextOvl;
+        Overlay_LoadGameState(ovl);
+
+        size = ovl->instanceSize;
+        PRINTF(T("クラスサイズ＝%dバイト\n", "Class size = %d bytes\n"), size);
+
+        gameState = SYSTEM_ARENA_MALLOC(size, "../graph.c", 1196);
+
+        if (gameState == NULL) {
+    #if OOT_DEBUG
+            char faultMsg[0x50];
+
+            PRINTF(T("確保失敗\n", "Failure to secure\n"));
+
+            sprintf(faultMsg, "CLASS SIZE= %d bytes", size);
+            Fault_AddHungupAndCrashImpl("GAME CLASS MALLOC FAILED", faultMsg);
+    #elif OOT_VERSION < NTSC_1_1
+            Fault_AddHungupAndCrash("../graph.c", 1067);
+    #elif OOT_VERSION < PAL_1_0
+            Fault_AddHungupAndCrash("../graph.c", 1070);
+    #elif OOT_VERSION < GC_JP
+            Fault_AddHungupAndCrash("../graph.c", 1081);
+    #else
+            Fault_AddHungupAndCrash("../graph.c", 1200);
+    #endif
+        }
+
+        GameState_Init(gameState, ovl->init, gfxCtx);
+    }
+
+    if (GameState_IsRunning(gameState)) {
+        Graph_Update(gfxCtx, gameState);
+    } else {
+        nextOvl = Graph_GetNextGameState(gameState);
+    }
+    // GameState_Destroy(gameState);
+    // SYSTEM_ARENA_FREE(gameState, "../graph.c", 1227);
+    // Overlay_FreeGameState(ovl);
+    
+    return nextOvl;
+    // Graph_Destroy(gfxCtx);
+    // PRINTF(T("グラフィックスレッド実行終了\n", "End of graphic thread execution\n"));
+}
+
 void Graph_ThreadEntry(void* arg0) {
     GraphicsContext gfxCtx;
     GameState* gameState;
     u32 size;
     GameStateOverlay* nextOvl = &gGameStateOverlayTable[GAMESTATE_SETUP];
     GameStateOverlay* ovl;
-
-    PRINTF(T("グラフィックスレッド実行開始\n", "Start graphic thread execution\n"));
-    Graph_Init(&gfxCtx);
 
     while (nextOvl != NULL) {
         ovl = nextOvl;
